@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestVectorModelConstructor(t *testing.T) {
@@ -101,6 +101,44 @@ func TestUserVector(t *testing.T) {
 	}
 }
 
+func BenchmarkUserVector(b *testing.B) {
+	var err error
+
+	defaultConfidence := 40.0
+	regularization := 0.01
+	docs := make(map[int][]float64)
+	docs[1234] = []float64{1, 2, 3}
+	vm, err := NewVectorModel(docs, defaultConfidence, regularization)
+	if err != nil {
+		b.Fatalf("Failed to create vector model %s", err)
+	}
+
+	confidence := map[int]float64{1234: 40.0, 666: 1.0}
+
+	var user mat.VecDense
+
+	// Reset benchmark timer
+	b.ResetTimer()
+
+	// Run benchmark
+	for i := 0; i < b.N; i++ {
+		user, err = vm.userVector(confidence)
+	}
+	if err != nil {
+		b.Fatalf("Error solving user vector: %s", err)
+	}
+
+	rows, cols := user.Dims()
+	if rows != 3 || cols != 1 {
+		b.Fatalf("Invalid user vec dimensions: %d, %d", rows, cols)
+	}
+
+	x, y, z := user.At(0, 0), user.At(1, 0), user.At(2, 0)
+	if math.Abs(x-0.0714273)+math.Abs(y-0.14285459)+math.Abs(z-0.21428189) > 1e-4 {
+		b.Fatalf("Invalid user vec: [%f, %f, %f]", x, y, z)
+	}
+}
+
 func TestScoresForUserVec(t *testing.T) {
 	regularization := 0.01
 	confidence := 40.0
@@ -112,7 +150,7 @@ func TestScoresForUserVec(t *testing.T) {
 		t.Fatalf("Failed to create vector model %s", err)
 	}
 
-	userVec := mat64.NewVector(3, []float64{0.2, 0.1, 0.0})
+	userVec := mat.NewVecDense(3, []float64{0.2, 0.1, 0.0})
 	scores := vm.scoresForUserVec(userVec)
 
 	rows, cols := scores.Dims()

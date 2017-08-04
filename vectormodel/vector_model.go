@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 type (
@@ -19,8 +19,8 @@ type (
 		docIDs                []int
 		docIndexes            map[int]int
 		nFactors              int
-		itemFactorsY          *mat64.Dense
-		squaredItemFactorsYtY *mat64.Dense
+		itemFactorsY          *mat.Dense
+		squaredItemFactorsYtY *mat.Dense
 	}
 
 	// DocumentScore is the result of a recommendation
@@ -57,9 +57,9 @@ func NewVectorModel(documents map[int][]float64, confidence, regularization floa
 		data = append(data, vector...)
 		i++
 	}
-	vm.itemFactorsY = mat64.NewDense(len(documents), vm.nFactors, data)
+	vm.itemFactorsY = mat.NewDense(len(documents), vm.nFactors, data)
 
-	var YtY mat64.Dense
+	var YtY mat.Dense
 	YtY.Mul(vm.itemFactorsY.T(), vm.itemFactorsY)
 	vm.squaredItemFactorsYtY = &YtY
 
@@ -128,7 +128,7 @@ func (vm *VectorModel) confidenceMap(seenDocs *map[int]bool) map[int]float64 {
 }
 
 // userVector returns the user vector for a given set of consumed documents
-func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat64.Vector, error) {
+func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat.VecDense, error) {
 	// We follow the notation from the paper "Collaborative Filtering for Implicit Feedback Datasets"
 	// Please see github.com/benfred/implicit as a reference implementation
 
@@ -137,11 +137,11 @@ func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat64.Vector, 
 
 	// A = YtCuY + reg * I = YtY + reg * I + Yt(Cu - I)Y
 	// We initialize A to YtY + reg * I  and sum the last term for each doc
-	var A mat64.Dense
+	var A mat.Dense
 	A.Add(vm.squaredItemFactorsYtY, eye(vm.nFactors, vm.regularization))
 
 	// b = YtCuPu
-	b := mat64.NewVector(vm.nFactors, make([]float64, vm.nFactors))
+	b := mat.NewVecDense(vm.nFactors, make([]float64, vm.nFactors))
 
 	for doc, confidence := range confidenceMap {
 		index, docFound := vm.docIndexes[doc]
@@ -151,7 +151,7 @@ func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat64.Vector, 
 		factor := vm.itemFactorsY.RowView(index)
 
 		// A += (confidence - 1) * np.outer(factor, factor)
-		var factor2 mat64.Dense
+		var factor2 mat.Dense
 		factor2.Mul(factor, factor.T())
 		factor2.Scale(confidence-1, &factor2)
 		A.Add(&A, &factor2)
@@ -160,21 +160,22 @@ func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat64.Vector, 
 		b.AddScaledVec(b, confidence, factor)
 	}
 
-	var x mat64.Vector
+	var x mat.VecDense
+
 	err := x.SolveVec(&A, b)
 	return x, err
 }
 
 // scoresForUserVec returns a vector with scores given set of consumed documents
-func (vm *VectorModel) scoresForUserVec(userVec *mat64.Vector) mat64.Vector {
-	var y mat64.Vector
+func (vm *VectorModel) scoresForUserVec(userVec *mat.VecDense) mat.VecDense {
+	var y mat.VecDense
 	y.MulVec(vm.itemFactorsY, userVec)
 	return y
 }
 
 // eye returns an identity matrix with size n and `value` in the diagonal
-func eye(n int, value float64) mat64.Matrix {
-	m := mat64.NewDense(n, n, make([]float64, n*n))
+func eye(n int, value float64) mat.Matrix {
+	m := mat.NewDense(n, n, make([]float64, n*n))
 	for i := 0; i < n; i++ {
 		m.Set(i, i, value)
 	}
