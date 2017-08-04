@@ -161,8 +161,15 @@ func (vm *VectorModel) userVector(confidenceMap map[int]float64) (mat.VecDense, 
 	}
 
 	var x mat.VecDense
+	// We could just solve the matrix by calling the next line, but
+	// A is positively defined, so we can use the Cholesky solver
+	// err := x.SolveVec(&A, b)
 
-	err := x.SolveVec(&A, b)
+	var ch mat.Cholesky
+	if ok := ch.Factorize(&unsafeSymmetric{A, vm.nFactors}); !ok {
+		return x, errors.New("Failed to run Cholesky factorization")
+	}
+	err := ch.SolveVec(&x, b)
 	return x, err
 }
 
@@ -180,4 +187,13 @@ func eye(n int, value float64) mat.Matrix {
 		m.Set(i, i, value)
 	}
 	return m
+}
+
+type unsafeSymmetric struct {
+	mat.Dense
+	n int
+}
+
+func (s *unsafeSymmetric) Symmetric() int {
+	return s.n
 }
