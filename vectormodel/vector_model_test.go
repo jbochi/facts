@@ -258,12 +258,23 @@ func TestRankSortsTopItems(t *testing.T) {
 
 	seenDocs := map[int]bool{0: true}
 	items := []int{0, 1, 3, 10}
-	err = vm.Rank(&items, &seenDocs)
+	scores, err := vm.Rank(&items, &seenDocs)
 	if err != nil {
 		t.Fatalf("Failed to recommend %s", err)
+	}
+	if notAlmostEqual(scores[0], 0.9302) ||
+		notAlmostEqual(scores[1], 0.001) ||
+		notAlmostEqual(scores[2], 0) ||
+		notAlmostEqual(scores[3], -1) {
+
+		t.Errorf("Wrong scores: %v", scores)
 	}
 	// Order is: Most similar, Not read, Unknown, read
 	if items[0] != 1 || items[1] != 3 || items[2] != 10 || items[3] != 0 {
 		t.Errorf("Wrong recommendations: %v", items)
 	}
+}
+
+func notAlmostEqual(a, b float64) bool {
+	return math.Abs(a-b) > 1e-4
 }

@@ -67,15 +67,17 @@ func NewVectorModel(documents map[int][]float64, confidence, regularization floa
 }
 
 // Rank sorts a list of candidate assets for a given user history
-func (vm *VectorModel) Rank(candidates *[]int, seenDocs *map[int]bool) (err error) {
+func (vm *VectorModel) Rank(candidates *[]int, seenDocs *map[int]bool) (scores []float64, err error) {
 	candidateScores, err := vm.scoreCandidates(candidates, seenDocs)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	scores = make([]float64, len(candidateScores))
 	for i, candidateScore := range candidateScores {
 		(*candidates)[i] = candidateScore.DocumentID
+		scores[i] = candidateScore.Score
 	}
-	return nil
+	return scores, nil
 }
 
 // Recommend returns a list of recommendedDocs and a list of scores
