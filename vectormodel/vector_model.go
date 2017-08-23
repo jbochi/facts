@@ -1,3 +1,10 @@
+// Package vectormodel provides primitives for serving Matrix Factorization
+// based Recommender System models.
+// We assume that the document vectors were calculated according to the paper
+// "Collaborative Filtering for Implicit Feedback Datasets".
+// Given the document vectors and the list of documents consumed by a user,
+// this package can calculate the user vectors in realtime to generate
+// recommendations.
 package vectormodel
 
 import (
@@ -9,10 +16,7 @@ import (
 )
 
 type (
-	// VectorModel is a struct to handle document vector space models
-	// We assume that the document vectors were calculated according to the paper
-	// "Collaborative Filtering for Implicit Feedback Datasets".
-	// Given an user history, we compute user vector and recommendations online.
+	// VectorModel is a struct to handle document vector space models.
 	VectorModel struct {
 		confidence            float64
 		regularization        float64
