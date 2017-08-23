@@ -8,10 +8,11 @@ This project provides a `vectormodel` package that can be used to serve real tim
 
 `model, err := NewVectorModel(documents map[int][]float64, confidence, regularization float64)`
 
-And to generate recommendations, you do:
+And to generate recommendations call `.Recommend` with a set of items the user has seen:
 
 `recs := model.Recommend(seenDocs *map[int]bool, n int)`
 
+Note that user vectors are not required. Matter of fact, you can use this to recommend documents to users that were *not* in the training set. The recommendations will be computed very efficiently (probably <1ms, depends on your model size) in real time.
 
 Check out the [demo](https://github-recs.appspot.com/) for a complete example that recommends GitHub repositories.
 
