@@ -1,7 +1,7 @@
 # facts
 Matrix Factorization based recommender system in Go. Because **facts** are more important than ever.
 
-This project provides a `vectormodel` package that can be used to serve real time recommendations. First of all, you will need to train a model to get document embeddings or latent **fact**ors. I highly recommend the [implicit](https://github.com/benfred/implicit) library for that. Once you have the documents as a map of an `int` id to and array of `float64`, you can create the vector model by calling:
+This project provides a `vectormodel` package that can be used to serve real time recommendations. First of all, you will need to train a model to get document embeddings or latent **fact**ors. I highly recommend the [implicit](https://github.com/benfred/implicit) library for that. Once you have the documents as a map of `int` ids to arrays of `float64`, you can create the vector model by calling:
 
 `model, err := NewVectorModel(documents map[int][]float64, confidence, regularization float64)`
 
