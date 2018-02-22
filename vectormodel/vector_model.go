@@ -71,22 +71,22 @@ func NewVectorModel(documents map[int][]float64, confidence, regularization floa
 }
 
 // Rank sorts a list of candidate assets for a given user history
-func (vm *VectorModel) Rank(candidates *[]int, seenDocs *map[int]bool) (scores []float64, err error) {
+func (vm *VectorModel) Rank(candidates []int, seenDocs map[int]bool) (scores []float64, err error) {
 	candidateScores, err := vm.scoreCandidates(candidates, seenDocs)
 	if err != nil {
 		return nil, err
 	}
 	scores = make([]float64, len(candidateScores))
 	for i, candidateScore := range candidateScores {
-		(*candidates)[i] = candidateScore.DocumentID
+		candidates[i] = candidateScore.DocumentID
 		scores[i] = candidateScore.Score
 	}
 	return scores, nil
 }
 
 // Recommend returns a list of recommendedDocs and a list of scores
-func (vm *VectorModel) Recommend(seenDocs *map[int]bool, n int) (recommendations []DocumentScore, err error) {
-	recommendations, err = vm.scoreCandidates(&vm.docIDs, seenDocs)
+func (vm *VectorModel) Recommend(seenDocs map[int]bool, n int) (recommendations []DocumentScore, err error) {
+	recommendations, err = vm.scoreCandidates(vm.docIDs, seenDocs)
 	if err != nil {
 		return nil, err
 	}
@@ -96,21 +96,21 @@ func (vm *VectorModel) Recommend(seenDocs *map[int]bool, n int) (recommendations
 	return recommendations, nil
 }
 
-func (vm *VectorModel) scoreCandidates(candidates *[]int, seenDocs *map[int]bool) (recommendations []DocumentScore, err error) {
+func (vm *VectorModel) scoreCandidates(candidates []int, seenDocs map[int]bool) (recommendations []DocumentScore, err error) {
 	confidenceMap := vm.confidenceMap(seenDocs)
 	if len(confidenceMap) == 0 {
 		return nil, fmt.Errorf("No seen doc is in model. History: %d Model: %d",
-			len(*seenDocs), len(vm.docIndexes))
+			len(seenDocs), len(vm.docIndexes))
 	}
 	userVec, err := vm.userVector(confidenceMap)
 	if err != nil {
 		return recommendations, err
 	}
 	scoresVec := vm.scoresForUserVec(&userVec)
-	candidateScores := make([]DocumentScore, len(*candidates))
-	for i, doc := range *candidates {
+	candidateScores := make([]DocumentScore, len(candidates))
+	for i, doc := range candidates {
 		var score float64
-		if _, docAlreadySeen := (*seenDocs)[doc]; docAlreadySeen {
+		if _, docAlreadySeen := seenDocs[doc]; docAlreadySeen {
 			score = -1
 		} else if docIndex, docInModel := vm.docIndexes[doc]; !docInModel {
 			score = 0
@@ -123,9 +123,9 @@ func (vm *VectorModel) scoreCandidates(candidates *[]int, seenDocs *map[int]bool
 	return candidateScores, nil
 }
 
-func (vm *VectorModel) confidenceMap(seenDocs *map[int]bool) map[int]float64 {
+func (vm *VectorModel) confidenceMap(seenDocs map[int]bool) map[int]float64 {
 	confidenceMap := make(map[int]float64)
-	for doc := range *seenDocs {
+	for doc := range seenDocs {
 		if _, inModel := vm.docIndexes[doc]; inModel {
 			confidenceMap[doc] = vm.confidence
 		}
