@@ -179,7 +179,7 @@ func TestRecommend(t *testing.T) {
 	seenDocs := map[int]bool{1234: true}
 	n := 10
 
-	recommendations, err := vm.Recommend(&seenDocs, n)
+	recommendations, err := vm.Recommend(seenDocs, n)
 	if err != nil {
 		t.Fatalf("Failed to recommend %s", err)
 	}
@@ -230,7 +230,7 @@ func TestRecommendReturnsTopItems(t *testing.T) {
 
 	seenDocs := map[int]bool{0: true}
 	n := 3
-	recs, err := vm.Recommend(&seenDocs, n)
+	recs, err := vm.Recommend(seenDocs, n)
 	if err != nil {
 		t.Fatalf("Failed to recommend %s", err)
 	}
@@ -258,7 +258,7 @@ func TestRankSortsTopItems(t *testing.T) {
 
 	seenDocs := map[int]bool{0: true}
 	items := []int{0, 1, 3, 10}
-	scores, err := vm.Rank(&items, &seenDocs)
+	scores, err := vm.Rank(items, seenDocs)
 	if err != nil {
 		t.Fatalf("Failed to recommend %s", err)
 	}
